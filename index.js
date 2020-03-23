@@ -1,4 +1,5 @@
 const glob = require("glob");
+const path = require("path");
 const { writeFile, readFile } = require("fs");
 
 const INSERT = "/ script was here /\n\n";
@@ -6,17 +7,19 @@ const INSERT = "/ script was here /\n\n";
 const writingFile = file => (err, data) => {
   if (!data.includes(INSERT)) {
     writeFile(file, `${INSERT}${data}`, err => {
-      throw new Error(err);
+      if (err) throw err;
+      console.log("Текст был добавлен");
     });
   }
 };
 
-const readingFile = file => {
-  readFile(file, "utf8", writingFile(file));
+const readingFile = directory => file => {
+  const filee = path.resolve(__dirname, `${directory}/${file}`);
+  readFile(filee, "utf8", writingFile(filee));
 };
 
-const iterableFiles = files => {
-  files.forEach(readingFile);
+const iterableFiles = ({ files, directory }) => {
+  files.forEach(readingFile(directory));
 };
 
 const getFilesByPattern = (
@@ -36,15 +39,15 @@ const getFilesByPattern = (
           reject(err);
         }
 
-        resolve(files);
+        resolve({ files, directory: path });
       }
     );
   });
 
-getFilesByPattern()
+getFilesByPattern("src")
   .then(iterableFiles)
   .catch(err => {
-    throw new Error(err);
+    throw err;
   })
   .finally(() => console.log("Writed completed"));
 
